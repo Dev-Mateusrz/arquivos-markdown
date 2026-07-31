@@ -2,6 +2,8 @@
 
 ## Aspectos Tecnológicos da Interface do Usuário
 
+> **Para que serve:** documentar em profundidade a arquitetura técnica do front-end — stack, camadas, autenticação, estado, componentes e deploy — para que um novo desenvolvedor (ou o próprio Claude) entenda o sistema sem precisar ler o código inteiro. Complementa o `README_PROJETO.md` (que é onboarding rápido) com o nível de detalhe de uma referência técnica. Ver `DOCUMENTACAO_BACKEND.md` para o mesmo nível de detalhe do lado do servidor.
+>
 > **Template reutilizável.** Copie este arquivo para `docs/DOCUMENTACAO_FRONTEND.md`, substitua os `{{PLACEHOLDERS}}` e apague os blocos `<!-- guia: ... -->` e a seção "Como adaptar este template" ao final. Seções que não se aplicam ao projeto devem ser **removidas**, não deixadas vazias — e o Sumário renumerado.
 
 ---

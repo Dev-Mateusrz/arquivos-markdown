@@ -1,5 +1,7 @@
 # Modelos de Issue — {{CHAVE_PROJETO_TRACKER}}
 
+> **Para que serve:** padronizar como toda issue (Bug ou Tarefa) é escrita no rastreador — campos, prioridade, formato de título e estrutura da descrição — para que qualquer pessoa (ou o Claude) crie issues consistentes e completas o suficiente para começar a implementação sem perguntas em aberto.
+>
 > **Template reutilizável.** Copie para `docs/JIRA_TAREFAS.md` (ou cole direto na descrição da issue), substitua os `{{PLACEHOLDERS}}` e apague os blocos `<!-- guia: ... -->`, os exemplos preenchidos e a seção "Como adaptar" ao final.
 >
 > Este arquivo é a fonte dos modelos de descrição referenciados na seção "Issues no rastreador" do `CLAUDE.md`. Quando um modelo mudar aqui, atualize a referência lá.
