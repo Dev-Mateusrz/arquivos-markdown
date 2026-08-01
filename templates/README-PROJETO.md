@@ -1,7 +1,5 @@
 # {{NOME_DO_SISTEMA}} - Guia de onboarding
 
-> **Para que serve:** ser o primeiro documento que um novo desenvolvedor lê — como subir o projeto localmente, quais variáveis configurar, como testar e como abrir um PR. É onboarding rápido para humanos; para detalhe técnico profundo, ver `DOCUMENTACAO_FRONTEND.md` / `DOCUMENTACAO_BACKEND.md`, e para as regras que o agente segue, ver `CLAUDE.md`.
->
 > **Template reutilizável.** Copie para a raiz do repositório como `README.md`, substitua todos os `{{PLACEHOLDERS}}`, apague os blocos `<!-- guia: ... -->` e a seção "Como adaptar este template" ao final.
 
 Este README explica como rodar o {{NOME_DO_SISTEMA}}, como frontend e backend se conectam, quais variáveis de ambiente são necessárias, quais regras de negócio precisam ser respeitadas e qual fluxo usar para commits e pull requests.

@@ -1,10 +1,6 @@
 # SUBG-SMS  
 ### Subsecretaria de Gestão — Secretaria Municipal de Saúde
 
-> **Para que serve:** documento único, no nível da organização (não de um projeto específico), com os padrões obrigatórios para todos os repositórios da SUBG-SMS — nomenclatura de repositório, branches, commits, infra e metodologia ágil.
->
-> **Atenção:** diferente dos demais arquivos desta pasta, este **não é um template genérico** — tem conteúdo real e fixo (nome da organização, servidores `devsubg`/`subg`). Se for reaproveitar a estrutura para outra organização, troque todo o conteúdo específico antes, não só o nome do arquivo.
-
 Bem-vindo à organização **SUBG-SMS**.  
 Este repositório central define os **padrões oficiais de desenvolvimento**, garantindo consistência, segurança e escalabilidade em todos os projetos.
 

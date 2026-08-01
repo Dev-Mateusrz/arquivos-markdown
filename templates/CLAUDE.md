@@ -1,7 +1,5 @@
 # Convenções do Projeto — {{NOME_DO_SISTEMA}}
 
-> **Para que serve:** definir as regras que o Claude (e qualquer humano) deve seguir neste repositório — branches, commits, PRs, issues e aprovação obrigatória antes de ações externas. É o arquivo que o agente relê antes de agir.
->
 > **Template reutilizável.** Copie este arquivo para a raiz do repositório como `CLAUDE.md`, substitua todos os `{{PLACEHOLDERS}}` e remova as linhas marcadas com `<!-- guia: ... -->` e os blocos "Como adaptar" ao final.
 
 ## Placeholders deste template
@@ -11,14 +9,16 @@
 | `{{NOME_DO_SISTEMA}}` | Nome do sistema/repositório | `SMSAgenda` |
 | `{{CHAVE_PROJETO_TRACKER}}` | Chave do projeto no rastreador de issues | `SUBG-AGENDA` |
 | `{{PREFIXO_ISSUE}}` | Prefixo da issue em minúsculo (usado em branch) | `sa` |
+| `{{PREFIXO_ISSUE_MAIUSCULO}}` | Prefixo da issue em maiúsculo (código gerado pelo tracker) | `SA` |
 | `{{BRANCH_PRODUCAO}}` | Branch de produção | `master` ou `main` |
 | `{{BRANCH_DESENVOLVIMENTO}}` | Branch base de desenvolvimento | `develop` |
 | `{{RESPONSAVEL_PADRAO}}` | Pessoa a quem toda issue é atribuída | `Nome Sobrenome` |
-| `{{IDIOMA_PADRAO}}` | Idioma de commits, branches, PRs e issues | `português do Brasil` |
 | `{{CMD_BUILD_BACKEND}}` | Comando de build do backend | `dotnet build ...` |
 | `{{CMD_TEST_BACKEND}}` | Comando de teste do backend | `dotnet test ...` |
 | `{{CMD_BUILD_FRONTEND}}` | Comando de build do frontend | `pnpm build` |
 | `{{CMD_LINT_FRONTEND}}` | Comando de lint do frontend | `pnpm lint` |
+| `{{CMD_TEST_FRONTEND}}` | Comando de teste do frontend | `pnpm test` |
+| `{{SHELL_PADRAO}}` | Shell usado nos exemplos | `powershell` ou `bash` |
 
 ---
 
@@ -115,12 +115,50 @@ git commit -m "tipo: resumo objetivo da mudança"
 
 ## Issues no rastreador (projeto {{CHAVE_PROJETO_TRACKER}})
 
-Os modelos de descrição (Bug e Tarefa), os campos padrão (tipo, prioridade, labels) e o formato de título estão documentados em `JIRA_TAREFAS.md` — use esse arquivo como fonte ao criar qualquer issue no projeto **{{CHAVE_PROJETO_TRACKER}}**.
+Usar o modelo abaixo para toda nova issue criada no projeto **{{CHAVE_PROJETO_TRACKER}}**, baseado no padrão já em uso no projeto (referência: issue {{PREFIXO_ISSUE_MAIUSCULO}}-1).
 
-Duas regras de lá são reforçadas aqui porque dependem de ação do Claude, não apenas de formatação, e valem sempre:
+### Campos
 
+- **Tipo:** `Tarefa` (ajustar para `Bug`, `Subtarefa`, etc., conforme o caso real)
+- **Prioridade:** definir de acordo com a dificuldade/complexidade da tarefa:
+  - `Highest`: mudança estrutural ou de alto risco, várias camadas, alto impacto
+  - `High`: mudança relevante, exige atenção e cuidado, mas escopo definido
+  - `Medium`: mudança padrão, escopo claro, complexidade moderada
+  - `Low`: mudança pequena, baixo risco, baixa complexidade
 - **Responsável:** sempre atribuir ao usuário ({{RESPONSAVEL_PADRAO}}). Se o Claude não conseguir localizar esse usuário no rastreador (ex: nome não encontrado via busca, ambiguidade entre contas), criar a issue **sem responsável atribuído** e avisar o usuário do motivo — nunca atribuir a outra pessoa ou adivinhar.
-- **Data limite:** o Claude **deve perguntar ao usuário, toda vez**, se a issue tem prazo, antes de criar a issue — nunca definir uma data por conta própria, e nunca pular essa pergunta.
+- **Categorias (labels):** atribuir conforme a área/objetivo da tarefa (ex: `backend`, `frontend`, `infra`, `documentacao` — reaproveitar labels já existentes no projeto sempre que possível; criar uma nova só se nenhuma existente cobrir o caso)
+- **Data limite:** o Claude **deve perguntar ao usuário, toda vez**, se a issue tem prazo, antes de criar a issue — nunca definir uma data por conta própria, e nunca pular essa pergunta
+
+### Estrutura da descrição
+
+```markdown
+## Contexto
+[Por que essa tarefa existe — qual problema ou lacuna motiva a mudança]
+
+## Objetivo
+[O que a tarefa busca alcançar, de forma direta]
+
+## Área afetada
+- Front-end: [sim/não — o que muda]
+- Back-end: [sim/não — o que muda]
+
+## Escopo sugerido
+- [item 1]
+- [item 2]
+
+## Critérios de aceite
+- [condição que precisa ser verdadeira para considerar a tarefa concluída]
+
+## Testes esperados
+- [o que deveria ser validado, por camada]
+
+## Observações técnicas
+[Pontos de atenção, dependências ou contexto técnico relevante antes de implementar]
+```
+
+Título da issue: descrição curta e direta da tarefa (o código `{{PREFIXO_ISSUE_MAIUSCULO}}-XX` é gerado automaticamente pelo rastreador, não precisa ser incluído no texto).
+
+> A regra de prioridade por dificuldade acima é uma proposta inicial — ajuste as faixas se não refletirem como você de fato avalia complexidade no dia a dia.
 
 ## Checks obrigatórios (rodar conforme o que foi alterado)
 
@@ -161,9 +199,74 @@ Seguir Conventional Commits, igual ao commit principal:
 feat: adiciona filtro de itens por disponibilidade
 ```
 
-### Descrição do PR
+### Descrição do PR (template)
 
-Use o modelo em `PULL_REQUEST_TEMPLATE.md`, copiado para `.github/pull_request_template.md` na raiz do repositório — o GitHub preenche automaticamente a descrição de todo PR novo com esse conteúdo, então não é necessário reescrevê-lo manualmente.
+````markdown
+## Resumo
+
+[O que mudou e por que mudou]
+
+## Tipo de mudança
+
+- [ ] Feature
+- [ ] Bugfix
+- [ ] Hotfix
+- [ ] Refactor
+- [ ] Documentação
+- [ ] Configuração/infra
+
+## Como testar
+
+1. [passo a passo para reproduzir/validar a mudança]
+
+- [ ] Rodei build local
+- [ ] Rodei testes unitários, quando houver script/configuração no projeto
+- [ ] Rodei testes automatizados adicionais, quando aplicável
+- [ ] Validei o fluxo principal alterado
+- [ ] Inclui prints ou vídeo quando a mudança afeta interface
+
+Comandos executados:
+
+```{{SHELL_PADRAO}}
+[listar os comandos reais rodados, conforme a tabela de checks]
+```
+
+Se não foram criados testes unitários, explique o motivo:
+
+```text
+[motivo]
+```
+
+## Cobertura da mudança
+
+- [ ] Cobre componente, hook, service ou utilitário alterado
+- [ ] Cobre estado de erro/loading/vazio quando aplicável
+- [ ] Cobre comportamento visual/interativo relevante
+- [ ] Não se aplica, pois a mudança é somente documental/configuração sem comportamento
+
+## Impacto visual
+
+- [ ] Não altera interface
+- [ ] Altera interface
+
+Prints ou vídeo, se houver:
+
+> [adicionar após revisão visual]
+
+## Variáveis de ambiente
+
+- [ ] Não adiciona variáveis
+- [ ] Adiciona/altera variáveis
+
+## Checklist do autor
+
+- [ ] A branch saiu da base correta (`{{BRANCH_DESENVOLVIMENTO}}` na regra geral, `{{BRANCH_PRODUCAO}}` em hotfix)
+- [ ] O PR aponta para a base correta
+- [ ] O título do PR está claro
+- [ ] Commits seguem Conventional Commits, em {{IDIOMA_PADRAO}}
+- [ ] Não inclui chaves, senhas ou dados sensíveis
+- [ ] Não inclui arquivos temporários, logs, dumps locais ou screenshots soltos
+````
 
 Marcar no checklist apenas os itens aplicáveis à mudança feita.
 
@@ -180,7 +283,6 @@ Se o PR tocar frontend visual, incluir print ou descrever claramente o fluxo tes
 1. **Substitua os placeholders.** Faça um find-and-replace de cada `{{...}}` da tabela do topo. Se um placeholder não se aplica (ex: projeto sem frontend), apague a linha inteira em vez de deixar o marcador.
 2. **Confirme a política de branches.** Git Flow (`{{BRANCH_PRODUCAO}}` + `{{BRANCH_DESENVOLVIMENTO}}`) é o padrão deste template. Se o time usa trunk-based, reescreva as seções de branch e hotfix.
 3. **Ajuste a tabela de checks.** Ela é a parte que mais varia entre projetos — cada linha deve corresponder a um comando que de fato existe e passa hoje.
-4. **Decida o rastreador.** O modelo de issue (Bug e Tarefa, campos, estrutura de descrição) vive em `JIRA_TAREFAS.md`, escrito para Jira. Os campos (tipo, prioridade, responsável, labels, prazo) existem em Azure DevOps, GitHub Issues e Linear com nomes próximos — adapte lá, não aqui.
-5. **Copie também `PULL_REQUEST_TEMPLATE.md`** para `.github/pull_request_template.md`. Este `CLAUDE.md` só referencia o modelo de PR, não o duplica.
-6. **Mantenha a regra de aprovação intacta.** É a única seção que não deveria ser relaxada por projeto: nenhuma ação com efeito externo (push, PR, issue) sem confirmação explícita.
-7. **Apague a tabela de placeholders e esta seção.** O `CLAUDE.md` final deve conter apenas regras, sem meta-instruções.
+4. **Decida o rastreador.** O modelo de issue foi escrito para Jira, mas os campos (tipo, prioridade, responsável, labels, prazo) existem em Azure DevOps, GitHub Issues e Linear com nomes próximos. Renomeie os campos, mantenha a estrutura da descrição.
+5. **Mantenha a regra de aprovação intacta.** É a única seção que não deveria ser relaxada por projeto: nenhuma ação com efeito externo (push, PR, issue) sem confirmação explícita.
+6. **Apague a tabela de placeholders e esta seção.** O `CLAUDE.md` final deve conter apenas regras, sem meta-instruções.
