@@ -1,0 +1,54 @@
+#!/bin/sh
+#
+# commit-msg — garante que todo commit carregue o ID do card do rastreador.
+#
+# Template reutilizável. Salve como `.githooks/commit-msg` (sem extensão
+# .txt), dê permissão de execução (`chmod +x .githooks/commit-msg`) e
+# substitua o placeholder {{PREFIXO_ISSUE_MAIUSCULO}} pelo prefixo real do
+# projeto (ex.: SG, SA, SEDM) nas duas linhas marcadas abaixo. Depois disso
+# apague este bloco de comentário.
+#
+# Formato obrigatório:   <tipo>({{PREFIXO_ISSUE_MAIUSCULO}}-000): descrição no imperativo
+# Exemplo:               feat({{PREFIXO_ISSUE_MAIUSCULO}}-42): cadastra setores e centrais de resposta
+#
+# Sem isso a automação do GitHub Actions não sabe qual card mover.
+
+MSG_FILE="$1"
+SUBJECT=$(grep -v '^#' "$MSG_FILE" | sed '/^[[:space:]]*$/d' | head -n 1)
+BODY=$(grep -v '^#' "$MSG_FILE")
+
+TIPOS='feat|fix|hotfix|chore|docs|refactor|test|style|perf|build|ci|revert'
+
+erro() {
+  printf '\n\033[31m✖ Commit recusado:\033[0m %s\n\n' "$1"
+  printf '  Formato esperado:  \033[1m<tipo>({{PREFIXO_ISSUE_MAIUSCULO}}-000): descrição\033[0m\n'
+  printf '  Exemplo:           \033[1mfeat({{PREFIXO_ISSUE_MAIUSCULO}}-42): cadastra setores e centrais de resposta\033[0m\n\n'
+  printf '  Tipos aceitos:     feat, fix, hotfix, chore, docs, refactor,\n'
+  printf '                     test, style, perf, build, ci, revert\n\n'
+  printf '  Dica: crie a branch como \033[1mfeat/{{PREFIXO_ISSUE}}-42-descricao-curta\033[0m que o ID\n'
+  printf '        entra sozinho na mensagem.\n\n'
+  exit 1
+}
+
+# Commits gerados pelo git (merge, revert, fixup) passam direto.
+case "$SUBJECT" in
+  Merge*|Revert*|"fixup!"*|"squash!"*) exit 0 ;;
+esac
+
+[ -z "$SUBJECT" ] && erro 'a mensagem está vazia.'
+
+if ! printf '%s' "$SUBJECT" | grep -qE "^($TIPOS)(\([^)]+\))?!?: .{4,}"; then
+  erro "\"$SUBJECT\" não segue o padrão de commits."
+fi
+
+# Placeholder {{PREFIXO_ISSUE_MAIUSCULO}} abaixo precisa virar o prefixo real
+# antes de usar o hook (ex.: 'SG' vira \bSG-[0-9]+\b).
+if ! printf '%s' "$BODY" | grep -qE '\b{{PREFIXO_ISSUE_MAIUSCULO}}-[0-9]+\b'; then
+  erro 'falta o ID do card (ex.: {{PREFIXO_ISSUE_MAIUSCULO}}-42). Sem ele o card não anda no rastreador.'
+fi
+
+if [ "$(printf '%s' "$SUBJECT" | wc -c)" -gt 100 ]; then
+  erro 'a primeira linha passou de 100 caracteres — resuma e use o corpo do commit.'
+fi
+
+exit 0

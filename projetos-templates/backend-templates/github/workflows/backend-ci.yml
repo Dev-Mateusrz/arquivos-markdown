@@ -1,0 +1,90 @@
+# Template reutilizável. Copie para `.github/workflows/backend-ci.yml`,
+# substitua os placeholders abaixo e apague este comentário.
+#
+# Placeholders deste template:
+#   {{NOME_SOLUCAO}}        nome do arquivo .sln                        (ex.: Gipe)
+#   {{USUARIO_BANCO_TESTE}} usuário do Postgres descartável usado em CI  (ex.: meusistema_test)
+#   {{SENHA_BANCO_TESTE}}   senha do Postgres descartável usado em CI    (ex.: meusistema_test)
+#   {{NOME_BANCO_TESTE}}    nome do banco descartável usado em CI        (ex.: meusistema_tests)
+#   {{VAR_CONNECTION_STRING_TESTE}}  variável de ambiente lida pelos testes de integração (ex.: MEUSISTEMA_TEST_POSTGRES)
+#   {{PROJETO_INFRA}}       projeto de infraestrutura (EF Core/migrations) (ex.: src/Gipe.Infrastructure)
+#   {{PROJETO_API}}         projeto de entrada/composition root            (ex.: src/Gipe.Api)
+#   {{VERSAO_DOTNET_EF}}    versão da ferramenta dotnet-ef a instalar      (ex.: 10.0.10)
+#
+# Este workflow assume .NET + EF Core + PostgreSQL. Para outra stack, troque
+# os passos de restore/build/test pelos equivalentes (ex.: `npm ci` + `npm run
+# build` + `npm test`, ou `go build`/`go test`) e remova a etapa de migrations
+# se o projeto não usar EF Core.
+
+name: Backend — CI
+
+on:
+  pull_request:
+    branches: [{{BRANCH_DESENVOLVIMENTO}}, {{BRANCH_PRODUCAO}}]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Compilar, testar e validar migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: {{USUARIO_BANCO_TESTE}}
+          POSTGRES_PASSWORD: {{SENHA_BANCO_TESTE}}
+          POSTGRES_DB: {{NOME_BANCO_TESTE}}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U {{USUARIO_BANCO_TESTE}} -d {{NOME_BANCO_TESTE}}"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      {{VAR_CONNECTION_STRING_TESTE}}: "Host=localhost;Port=5432;Database={{NOME_BANCO_TESTE}};Username={{USUARIO_BANCO_TESTE}};Password={{SENHA_BANCO_TESTE}};Pooling=false"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restaurar dependências
+        run: dotnet restore {{NOME_SOLUCAO}}.sln
+
+      - name: Compilar
+        run: dotnet build {{NOME_SOLUCAO}}.sln --configuration Release --no-restore
+
+      - name: Executar testes
+        run: dotnet test {{NOME_SOLUCAO}}.sln --configuration Release --no-build --no-restore
+
+      - name: Instalar ferramenta do Entity Framework
+        run: dotnet tool install --global dotnet-ef --version {{VERSAO_DOTNET_EF}}
+
+      - name: Conferir sincronização entre modelo e migrations
+        run: >-
+          dotnet ef migrations has-pending-model-changes
+          --project {{PROJETO_INFRA}}
+          --startup-project {{PROJETO_API}}
+          --configuration Release
+          --no-build
+
+# Como adaptar este template a um novo projeto:
+# 1. Substitua os placeholders acima.
+# 2. Se o projeto não usa banco relacional em CI (ou usa outro SGBD), troque
+#    ou remova o serviço `postgres` e a variável de connection string.
+# 3. Se não há migrations (EF Core ou equivalente), apague o último passo.
+# 4. Se o repositório também tem frontend, veja o workflow irmão
+#    `frontend-ci.yml` deste mesmo docs-template — os checks de lá já usam
+#    {{CMD_BUILD_FRONTEND}}/{{CMD_LINT_FRONTEND}} definidos no CLAUDE.md do projeto.

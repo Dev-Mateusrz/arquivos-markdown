@@ -1,0 +1,65 @@
+#!/bin/sh
+#
+# prepare-commit-msg — preenche o ID do card a partir do nome da branch.
+#
+# Template reutilizável. Salve como `.githooks/prepare-commit-msg` (sem
+# extensão .txt), dê permissão de execução
+# (`chmod +x .githooks/prepare-commit-msg`) e substitua
+# {{PREFIXO_ISSUE_MAIUSCULO}} pelo prefixo real do projeto (ex.: SG) na linha
+# marcada abaixo. Depois disso apague este bloco de comentário.
+#
+# Branch `feat/{{PREFIXO_ISSUE}}-42-cadastro-setores` + `git commit` vazio  ->  já abre com
+# "feat({{PREFIXO_ISSUE_MAIUSCULO}}-42): ". Se você usou `git commit -m "..."` sem o ID, ele é injetado no
+# escopo. Assim ninguém precisa decorar o número do card na hora de commitar.
+
+MSG_FILE="$1"
+SOURCE="$2"
+
+# Merge, squash e amend mantêm a mensagem original.
+case "$SOURCE" in
+  merge|squash|commit) exit 0 ;;
+esac
+
+BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null) || exit 0
+
+# ID do card: {{PREFIXO_ISSUE_MAIUSCULO}}-42 em qualquer lugar do nome da branch (aceita minúsculo).
+KEY=$(printf '%s' "$BRANCH" | grep -oiE '{{PREFIXO_ISSUE_MAIUSCULO}}-[0-9]+' | head -n 1 | tr '[:lower:]' '[:upper:]')
+[ -z "$KEY" ] && exit 0
+
+# Já tem o ID na mensagem? Não mexe.
+if grep -qiE "\\b$KEY\\b" "$MSG_FILE"; then
+  exit 0
+fi
+
+# Tipo do commit deduzido do prefixo da branch.
+PREFIX=$(printf '%s' "$BRANCH" | cut -d/ -f1 | tr '[:upper:]' '[:lower:]')
+case "$PREFIX" in
+  feat|feature) TYPE=feat ;;
+  fix|bugfix)   TYPE=fix ;;
+  hotfix)       TYPE=hotfix ;;
+  chore|docs|refactor|test|style|perf|build|ci|revert) TYPE="$PREFIX" ;;
+  *)            TYPE=chore ;;
+esac
+
+CONVENTIONAL='^(feat|fix|hotfix|chore|docs|refactor|test|style|perf|build|ci|revert)(\([^)]*\))?!?: '
+SUBJECT=$(grep -v '^#' "$MSG_FILE" | sed '/^[[:space:]]*$/d' | head -n 1)
+
+if [ -z "$SUBJECT" ]; then
+  # Commit interativo sem mensagem: abre o editor já com o cabeçalho pronto.
+  TMP=$(mktemp)
+  printf '%s(%s): \n' "$TYPE" "$KEY" > "$TMP"
+  cat "$MSG_FILE" >> "$TMP"
+  mv "$TMP" "$MSG_FILE"
+elif printf '%s' "$SUBJECT" | grep -qE "$CONVENTIONAL"; then
+  if printf '%s' "$SUBJECT" | grep -qE '^[a-z]+\('; then
+    # Já tem escopo (outro contexto): registra o card como trailer.
+    printf '\nRefs: %s\n' "$KEY" >> "$MSG_FILE"
+  else
+    # `feat: mensagem` -> `feat({{PREFIXO_ISSUE_MAIUSCULO}}-42): mensagem`
+    sed -i "1s/^\([a-z]\{1,\}\)\(!\{0,1\}\): /\1($KEY)\2: /" "$MSG_FILE"
+  fi
+else
+  printf '\nRefs: %s\n' "$KEY" >> "$MSG_FILE"
+fi
+
+exit 0

@@ -1,0 +1,129 @@
+# Template reutilizável. Copie para `.github/workflows/jira-automation.yml`,
+# substitua os placeholders e apague este comentário. Use este arquivo junto
+# com `jira.py` (mesma pasta docs-template) — os dois formam um par
+# autocontido: workflow + script, sem dependência de arquivo externo.
+#
+# Diferença em relação a `jira-pipeline-backend.yml` deste mesmo
+# docs-template: este é o automatismo simples — uma branch corresponde a uma
+# única issue, três colunas, sem trava de card fullstack entre repositórios.
+# Use esta versão quando o projeto for um repositório só (ou quando cada
+# repositório tiver seu board próprio); use jira-pipeline-*.yml quando
+# backend e frontend compartilham o mesmo card e precisam sincronizar.
+#
+# Placeholders deste template:
+#   {{PREFIXO_ISSUE}}           prefixo da issue, em minúsculo, usado na branch (ex.: sedm)
+#   {{PREFIXO_ISSUE_MAIUSCULO}} mesmo prefixo, maiúsculo, usado no Jira        (ex.: SEDM)
+#   {{DOMINIO_TRACKER}}         domínio do Atlassian (sem /browse)             (ex.: suaorg.atlassian.net)
+#   {{BRANCH_DESENVOLVIMENTO}}  branch base de desenvolvimento                 (ex.: develop)
+#   {{BRANCH_PRODUCAO}}         branch de produção                             (ex.: main)
+
+name: Jira Automation
+
+# -----------------------------------------------------------------------------
+# Sincroniza o status do card no Jira a partir do fluxo Git deste repositorio.
+# Cada branch corresponde a uma unica issue {{PREFIXO_ISSUE_MAIUSCULO}}, identificada pelo
+# proprio nome da branch (`<tipo>/{{PREFIXO_ISSUE}}-<id>-<descricao>`, ver CLAUDE.md):
+#
+#   1. Push que cria uma branch nova (feature/bugfix/fix/hotfix/chore/docs/
+#      refactor/test)
+#      -> card vai pra "Fazendo" (transition {{JIRA_TRANSITION_ID_INICIO}})
+#
+#   2. Pull request aberto (para `{{BRANCH_DESENVOLVIMENTO}}` ou `{{BRANCH_PRODUCAO}}`)
+#      -> card vai pra "Em analise" (transition {{JIRA_TRANSITION_ID_ANALISE}})
+#
+#   3. Pull request fechado com merge (para `{{BRANCH_DESENVOLVIMENTO}}` ou `{{BRANCH_PRODUCAO}}`)
+#      -> card vai pra "Feito" (transition {{JIRA_TRANSITION_ID_CONCLUSAO}})
+#
+# Os IDs de transicao (11/21/31/41...) sao especificos do workflow configurado
+# no board do Jira do projeto - descubra os do seu projeto chamando
+# GET /rest/api/3/issue/{issueKey}/transitions com a mesma credencial usada
+# aqui, e substitua os tres placeholders acima por numeros fixos antes de usar.
+#
+# Secrets necessarios no repositorio (Settings > Secrets and variables >
+# Actions):
+#   JIRA_BASE_URL    https://{{DOMINIO_TRACKER}}
+#   JIRA_USER_EMAIL  email da conta Atlassian usada pela automacao
+#   JIRA_API_TOKEN   gerado em id.atlassian.com -> Security -> API tokens
+# -----------------------------------------------------------------------------
+
+on:
+  push:
+  pull_request:
+    types: [opened, closed]
+
+# Nao bloquear nada - automacao e "best effort": se o Jira estiver fora, nao
+# impede o desenvolvimento. Falha so marca a run vermelha pra olhar depois.
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  inicio-de-implementacao:
+    name: Mover card para "Fazendo" (nova branch)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.event.created == true
+
+    steps:
+      - name: Checkout (script)
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/workflows/scripts
+          sparse-checkout-cone-mode: false
+
+      - name: Transicionar issue da branch
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: python3 .github/workflows/scripts/jira.py iniciar --branch "${{ github.ref_name }}"
+
+  pr-aberto:
+    name: Mover card para "Em analise" (PR aberto)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+
+    steps:
+      - name: Checkout (script)
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/workflows/scripts
+          sparse-checkout-cone-mode: false
+
+      - name: Transicionar issue da branch
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: python3 .github/workflows/scripts/jira.py pr-aberto --branch "${{ github.head_ref }}"
+
+  pr-mergeado:
+    name: Mover card para "Feito" (PR mergeado)
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'pull_request'
+      && github.event.action == 'closed'
+      && github.event.pull_request.merged == true
+
+    steps:
+      - name: Checkout (script)
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/workflows/scripts
+          sparse-checkout-cone-mode: false
+
+      - name: Transicionar issue da branch
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: python3 .github/workflows/scripts/jira.py pr-mergeado --branch "${{ github.head_ref }}"
+
+# Como adaptar este template a um novo projeto:
+# 1. Substitua {{PREFIXO_ISSUE}} / {{PREFIXO_ISSUE_MAIUSCULO}} / {{DOMINIO_TRACKER}}
+#    aqui e no jira.py correspondente (os dois precisam concordar).
+# 2. Descubra os IDs de transição reais do board (ver comentário acima) e
+#    troque os três placeholders {{JIRA_TRANSITION_ID_*}} por números.
+# 3. Salve o jira.py deste docs-template em `.github/workflows/scripts/jira.py`.

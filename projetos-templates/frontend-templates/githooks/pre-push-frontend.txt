@@ -1,0 +1,31 @@
+#!/bin/sh
+#
+# pre-push — bloqueia push direto nas branches protegidas.
+#
+# Template reutilizável. Salve como `.githooks/pre-push` (sem extensão .txt),
+# dê permissão de execução (`chmod +x .githooks/pre-push`) e substitua
+# {{BRANCH_PRODUCAO}} e {{BRANCH_DESENVOLVIMENTO}} pelos nomes reais das
+# branches protegidas do projeto (ex.: main, develop). Depois disso apague
+# este bloco de comentário.
+#
+# Todo código entra nessas branches via Pull Request; é o que faz o card andar
+# no rastreador. Em emergência: ALLOW_DIRECT_PUSH=1 git push
+
+[ "$ALLOW_DIRECT_PUSH" = "1" ] && exit 0
+
+PROTEGIDAS='refs/heads/{{BRANCH_PRODUCAO}} refs/heads/{{BRANCH_DESENVOLVIMENTO}}'
+
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+  for protegida in $PROTEGIDAS; do
+    if [ "$remote_ref" = "$protegida" ]; then
+      branch=${remote_ref#refs/heads/}
+      printf '\n\033[31m✖ Push recusado:\033[0m a branch \033[1m%s\033[0m só recebe código via Pull Request.\n\n' "$branch"
+      printf '  Fluxo do time:  feat|fix|hotfix/{{PREFIXO_ISSUE_MAIUSCULO}}-000-...  ->  {{BRANCH_DESENVOLVIMENTO}}  ->  {{BRANCH_PRODUCAO}}\n\n'
+      printf '  Suba sua branch de trabalho e abra o PR para \033[1m%s\033[0m pelo\n' "$branch"
+      printf '  link que o git mostra depois do push.\n\n'
+      exit 1
+    fi
+  done
+done
+
+exit 0

@@ -1,0 +1,78 @@
+# Template reutilizável. Copie para `.github/workflows/frontend-ci.yml`,
+# substitua os placeholders abaixo e apague este comentário. Workflow irmão
+# de `backend-ci.yml` deste mesmo docs-template — se o repositório for
+# fullstack e o time quiser CI simétrica entre as duas pontas, veja o item 2
+# da nota de adaptação ao final.
+#
+# Placeholders deste template:
+#   {{BRANCH_PRODUCAO}}         branch de produção                              (ex.: main)
+#   {{BRANCH_DESENVOLVIMENTO}}  branch de desenvolvimento                       (ex.: develop)
+#   {{VERSAO_NODE}}             versão do Node usada pelo projeto               (ex.: 22)
+#   {{GERENCIADOR_PACOTES}}     valor aceito pelo `cache:` do setup-node        (ex.: npm, pnpm, yarn)
+#   {{CMD_INSTALL_CI_FRONTEND}} instalação reprodutível, sem rodar hooks/scripts (ex.: npm ci --ignore-scripts)
+#   {{CMD_TYPECHECK_FRONTEND}}  checagem de tipos, se o projeto usa TypeScript  (ex.: npx tsc --noEmit)
+#   {{CMD_LINT_FRONTEND}}       comando de lint — mesmo valor usado no CLAUDE.md
+#   {{CMD_BUILD_FRONTEND}}      comando de build — mesmo valor usado no CLAUDE.md
+#
+# O dia a dia (push/PR contra a {{BRANCH_DESENVOLVIMENTO}}) segue sem CI, por decisão do
+# time: o retorno rápido vem do build local. O que não pode passar sem conferência é o
+# que vai para produção, então este fluxo roda só nos PRs cuja base é a
+# {{BRANCH_PRODUCAO}} — ou seja, nas releases da {{BRANCH_DESENVOLVIMENTO}} e nos hotfixes.
+#
+# `push` na {{BRANCH_PRODUCAO}} também dispara, para o caso de alguém mergear por fora do
+# PR: se as regras de proteção de branch não forem aplicadas (ex.: plano da organização
+# não permite), o CI é o único registro de que o que entrou compila.
+name: Frontend — portão da produção
+
+on:
+  pull_request:
+    branches: [{{BRANCH_PRODUCAO}}]
+  push:
+    branches: [{{BRANCH_PRODUCAO}}]
+  workflow_dispatch:
+
+jobs:
+  validar:
+    name: Compilar, checar tipos e lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '{{VERSAO_NODE}}'
+          cache: {{GERENCIADOR_PACOTES}}
+
+      # `{{CMD_INSTALL_CI_FRONTEND}}` respeita o lockfile e falha se ele estiver fora de
+      # sincronia com o manifesto de pacotes — o que também serve de conferência.
+      #
+      # Se o projeto tiver um hook de `prepare` apontando o git para .githooks/, ele não
+      # faz sentido no runner e falha em ambiente sem hooks. Aqui os hooks não têm o que
+      # proteger: não há commit. Por isso a instalação em CI pula os scripts do pacote.
+      - name: Instalar dependências
+        run: {{CMD_INSTALL_CI_FRONTEND}}
+
+      - name: Checar tipos
+        run: {{CMD_TYPECHECK_FRONTEND}}
+
+      - name: Lint
+        run: {{CMD_LINT_FRONTEND}}
+
+      # Por último porque é o mais lento, e porque tipo e lint quebrados já explicam a
+      # falha sem esperar o build inteiro.
+      - name: Compilar
+        run: {{CMD_BUILD_FRONTEND}}
+
+# Como adaptar este template a um novo projeto:
+# 1. Substitua os placeholders acima — mantenha {{CMD_LINT_FRONTEND}} e
+#    {{CMD_BUILD_FRONTEND}} idênticos aos valores definidos no CLAUDE.md do
+#    repositório.
+# 2. Se o time preferir CI simétrica com o backend (rodando também contra a
+#    {{BRANCH_DESENVOLVIMENTO}}, como em backend-ci.yml), acrescente a branch
+#    às listas de `pull_request`/`push` acima.
+# 3. Se o projeto não usa TypeScript, apague o passo "Checar tipos" e o
+#    placeholder {{CMD_TYPECHECK_FRONTEND}}.
+# 4. Se o gerenciador de pacotes não tiver suporte a `cache:` no
+#    actions/setup-node, remova essa chave.

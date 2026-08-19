@@ -1,0 +1,99 @@
+# Template reutilizável. Copie para `.github/workflows/jira-pipeline.yml` em
+# CADA repositório do projeto (backend e frontend usam o mesmo arquivo, só
+# muda o valor de REPO_ROLE — ver comentário na env abaixo). Substitua os
+# placeholders e apague este comentário.
+#
+# Placeholders deste template:
+#   {{PREFIXO_ISSUE_MAIUSCULO}} chave/prefixo do projeto no Jira          (ex.: SG)
+#   {{BRANCH_DESENVOLVIMENTO}}  branch base de desenvolvimento           (ex.: develop)
+#   {{BRANCH_PRODUCAO}}         branch de produção                       (ex.: main)
+#   {{VERSAO_NODE}}             versão do Node usada para rodar o script (ex.: 22)
+#   {{COLUNA_EM_DESENVOLVIMENTO}} nome exato da coluna no board (não é o valor do menu do workflow_dispatch — esse é fixo, veja abaixo)
+#   {{COLUNA_EM_REVISAO}}         idem
+#   {{COLUNA_CONCLUIDO}}          idem
+#
+# Este workflow move os cards do rastreador sozinho, seguindo o fluxo de
+# branches do CONTRIBUTING.md:
+#
+#   push em feat/fix/hotfix/...                       -> {{COLUNA_EM_DESENVOLVIMENTO}}
+#   PR aprovado e mergeado na {{BRANCH_DESENVOLVIMENTO}} -> {{COLUNA_EM_REVISAO}}
+#   PR mergeado na {{BRANCH_PRODUCAO}}                   -> {{COLUNA_CONCLUIDO}}
+#
+# O ID do card vem da branch (`feat/{{PREFIXO_ISSUE_MAIUSCULO}}-42-...`), do título do PR ou das
+# mensagens de commit (`feat({{PREFIXO_ISSUE_MAIUSCULO}}-42): ...`). Sem ID, nada acontece — e o job avisa.
+#
+# Secrets necessários no repositório (Settings > Secrets and variables > Actions):
+#   JIRA_BASE_URL    https://{{DOMINIO_TRACKER}}
+#   JIRA_USER_EMAIL  e-mail da conta Atlassian usada pela automação
+#   JIRA_API_TOKEN   token gerado em id.atlassian.com/manage-profile/security/api-tokens
+#
+# O script chamado abaixo, `.github/scripts/jira-sync.mjs`, é outro arquivo
+# deste docs-template (par jira-sync-backend.mjs / jira-sync-frontend.mjs —
+# conteúdo idêntico entre os dois repositórios, copie cada um para o seu
+# lugar). Ele concentra a lógica de achar o ID do card, conferir a aprovação
+# do PR, aplicar a trava de cards fullstack e chamar a API de transição do
+# Jira — não precisa ser escrito do zero.
+#
+# Se o projeto não precisa da trava fullstack nem de múltiplos repositórios,
+# considere usar o par mais simples jira-automation.yml + jira.py deste
+# mesmo docs-template — ele é autocontido (workflow + script Python juntos)
+# e cobre o caso de um repositório só.
+
+name: Jira — pipeline automática
+
+on:
+  push:
+    branches-ignore: [{{BRANCH_PRODUCAO}}, {{BRANCH_DESENVOLVIMENTO}}] # branches de trabalho; produção/desenvolvimento entram só via PR
+  pull_request:
+    types: [closed] # o job filtra e só age quando houve merge de verdade
+    branches: [{{BRANCH_DESENVOLVIMENTO}}, {{BRANCH_PRODUCAO}}]
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: 'Card a mover (ex.: {{PREFIXO_ISSUE_MAIUSCULO}}-42)'
+        required: true
+      status:
+        description: 'Status de destino'
+        required: true
+        type: choice
+        # Estes três valores são o vocabulário interno fixo que o script espera
+        # em INPUT_STATUS (veja buildPlan() em jira-sync.mjs) — não são os nomes
+        # das colunas do board, e não devem virar placeholder.
+        options: [desenvolvimento, testes, concluido]
+
+permissions:
+  contents: read
+  pull-requests: read # necessário para ler os reviews e conferir a aprovação
+
+# Um sync por branch de cada vez; pushes seguidos cancelam o anterior, merges não.
+concurrency:
+  group: jira-sync-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
+
+jobs:
+  sync:
+    name: Sincronizar status no Jira
+    runs-on: ubuntu-latest
+    # PR fechado sem merge não move nada.
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '{{VERSAO_NODE}}'
+
+      - name: Aplicar transição
+        run: node .github/scripts/jira-sync.mjs
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_PROJECT_KEY: {{PREFIXO_ISSUE_MAIUSCULO}}
+          # Qual ponta este repositório é. Cards com o rótulo `{{ROTULO_FULLSTACK}}` no Jira só
+          # andam quando backend E frontend chegarem na mesma etapa.
+          # Use REPO_ROLE: frontend no workflow equivalente do repositório de frontend.
+          REPO_ROLE: backend
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_ISSUE: ${{ inputs.issue }}
+          INPUT_STATUS: ${{ inputs.status }}
