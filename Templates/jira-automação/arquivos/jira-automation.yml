@@ -1,0 +1,78 @@
+# Copie para .github/workflows/jira-automation.yml e configure conforme README.md.
+# Substitua apenas {{BRANCH_DESENVOLVIMENTO}} e {{BRANCH_PRODUCAO}} neste arquivo.
+# O script Python é idêntico em todos os repositórios; adapte via Actions Variables.
+name: Jira Automation
+
+on:
+  push:
+    branches-ignore:
+      - '{{BRANCH_DESENVOLVIMENTO}}'
+      - '{{BRANCH_PRODUCAO}}'
+    tags-ignore: ['**']
+  pull_request:
+    branches: ['{{BRANCH_DESENVOLVIMENTO}}', '{{BRANCH_PRODUCAO}}']
+    types: [opened, reopened, ready_for_review, closed]
+
+permissions:
+  contents: read
+
+jobs:
+  sincronizar:
+    name: Registrar evento e avançar issue quando permitido
+    # Pushes de atualização ainda geram uma run, mas não alocam runner neste job.
+    if: >-
+      (github.event_name == 'push'
+        && github.ref_type == 'branch'
+        && github.event.created == true
+        && github.event.deleted == false)
+      || (github.event_name == 'pull_request'
+        && github.event.pull_request.head.repo.full_name == github.repository
+        && ((github.event.action == 'closed' && github.event.pull_request.merged == true)
+          || (github.event.action != 'closed' && github.event.pull_request.draft == false)))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    continue-on-error: true
+    # Não incluir este job entre os checks obrigatórios de merge/deploy.
+    steps:
+      - name: Checkout esparso do script de uma referência confiável
+        uses: actions/checkout@v7
+        with:
+          # PR: versão já presente na base. Push: versão da branch padrão.
+          # Não executar o script modificado na branch de trabalho com secrets.
+          ref: ${{ github.event.pull_request.base.sha || github.event.repository.default_branch }}
+          sparse-checkout: |
+            /.github/workflows/scripts/jira.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Sincronizar em best-effort
+        env:
+          JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL || secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_PREFIXOS: ${{ vars.JIRA_PREFIXOS }}
+          JIRA_TIPOS_BRANCH: ${{ vars.JIRA_TIPOS_BRANCH || 'feat,feature,bugfix,fix,hotfix,chore,docs,refactor,test,perf,ci,build' }}
+          JIRA_STATUS_INICIAIS: ${{ vars.JIRA_STATUS_INICIAIS }}
+          JIRA_STATUS_FAZENDO: ${{ vars.JIRA_STATUS_FAZENDO }}
+          JIRA_STATUS_ANALISE: ${{ vars.JIRA_STATUS_ANALISE }}
+          JIRA_STATUS_FEITO: ${{ vars.JIRA_STATUS_FEITO }}
+          JIRA_TRANSITION_ID_INICIO: ${{ vars.JIRA_TRANSITION_ID_INICIO }}
+          JIRA_TRANSITION_ID_ANALISE: ${{ vars.JIRA_TRANSITION_ID_ANALISE }}
+          JIRA_TRANSITION_ID_CONCLUSAO: ${{ vars.JIRA_TRANSITION_ID_CONCLUSAO }}
+          JIRA_CAMPO_CONCLUSAO: ${{ vars.JIRA_CAMPO_CONCLUSAO }}
+          JIRA_VALOR_CONCLUSAO: ${{ vars.JIRA_VALOR_CONCLUSAO }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ACTION: ${{ github.event.action }}
+          # Dados do evento passam por env, nunca interpolados no código shell.
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        shell: bash
+        run: |
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            modo="iniciar"
+          elif [[ "$EVENT_ACTION" == "closed" ]]; then
+            modo="pr-mergeado"
+          else
+            modo="pr-aberto"
+          fi
+          python3 .github/workflows/scripts/jira.py "$modo" --branch "$BRANCH_NAME" --pr-url "$PR_URL"
