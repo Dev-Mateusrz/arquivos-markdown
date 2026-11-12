@@ -1,7 +1,0 @@
-Fazer:
-[] - Organizar e padronizar todos os arquivos da pasta Templates.
-[] - Organizar e padronizar todos a pasta Agentes.
-
-Criar:
-[] - Pasta padronizada de Specs
-[] - Pasta padronizada de (Documentação, Arquitetura, Interface, Qualidade e Segurança)
