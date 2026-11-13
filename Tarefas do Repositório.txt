@@ -3,5 +3,6 @@ Fazer:
 [] - Organizar e padronizar todos a pasta Agentes.
 
 Criar:
-[] - Pasta padronizada de Specs
-[] - Pasta padronizada de (Documentação, Arquitetura, Interface, Qualidade e Segurança)
+[] - Pasta padronizada de SpecsDrivens.
+[] - Storybook de componentes UI.
+[] - Pasta padronizada de (Documentação, Arquitetura, Interface, Qualidade e Segurança).
