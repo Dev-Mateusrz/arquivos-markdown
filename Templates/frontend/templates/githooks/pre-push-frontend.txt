@@ -1,31 +1,25 @@
 #!/bin/sh
-#
-# pre-push — bloqueia push direto nas branches protegidas.
-#
-# Template reutilizável. Salve como `.githooks/pre-push` (sem extensão .txt),
-# dê permissão de execução (`chmod +x .githooks/pre-push`) e substitua
-# {{BRANCH_PRODUCAO}} e {{BRANCH_DESENVOLVIMENTO}} pelos nomes reais das
-# branches protegidas do projeto (ex.: main, develop). Depois disso apague
-# este bloco de comentário.
-#
-# Todo código entra nessas branches via Pull Request; é o que faz o card andar
-# no rastreador. Em emergência: ALLOW_DIRECT_PUSH=1 git push
-
-[ "$ALLOW_DIRECT_PUSH" = "1" ] && exit 0
-
-PROTEGIDAS='refs/heads/{{BRANCH_PRODUCAO}} refs/heads/{{BRANCH_DESENVOLVIMENTO}}'
-
-while read -r _local_ref _local_sha remote_ref _remote_sha; do
-  for protegida in $PROTEGIDAS; do
-    if [ "$remote_ref" = "$protegida" ]; then
-      branch=${remote_ref#refs/heads/}
-      printf '\n\033[31m✖ Push recusado:\033[0m a branch \033[1m%s\033[0m só recebe código via Pull Request.\n\n' "$branch"
-      printf '  Fluxo do time:  feat|fix|hotfix/{{PREFIXO_ISSUE_MAIUSCULO}}-000-...  ->  {{BRANCH_DESENVOLVIMENTO}}  ->  {{BRANCH_PRODUCAO}}\n\n'
-      printf '  Suba sua branch de trabalho e abra o PR para \033[1m%s\033[0m pelo\n' "$branch"
-      printf '  link que o git mostra depois do push.\n\n'
-      exit 1
-    fi
-  done
+# Copie para .githooks/pre-push, junto de config.sh.
+[ "${SKIP_GIT_HOOKS:-0}" = 1 ] && exit 0
+. "$(dirname "$0")/config.sh" || exit 1
+if [ "${ALLOW_DIRECT_PUSH:-0}" != 1 ]; then
+  case "$PROTECTED_BRANCHES" in
+    ''|*'{{'*) hook_error 'configure PROTECTED_BRANCHES em .githooks/config.sh.' ;;
+  esac
+fi
+UPDATES=0
+while IFS=' ' read -r local_ref local_sha remote_ref remote_sha; do
+  [ -n "$remote_ref" ] || continue
+  if [ "${ALLOW_DIRECT_PUSH:-0}" != 1 ]; then
+    for branch in $PROTECTED_BRANCHES; do
+      if [ "$remote_ref" = "refs/heads/$branch" ]; then
+        hook_error "push para $branch recusado; envie a branch de trabalho e abra um PR. Em emergência: ALLOW_DIRECT_PUSH=1 (as verificações continuam)."
+      fi
+    done
+  fi
+  # Ref excluída: o object ID local é composto apenas de zeros, inclusive com SHA-256.
+  case "$local_sha" in *[!0]*) UPDATES=1 ;; esac
 done
-
-exit 0
+[ "$UPDATES" = 1 ] || exit 0
+# stdin do hook contém refs, não deve ser consumido por um comando de teste.
+hook_run_script hooks:pre-push < /dev/null

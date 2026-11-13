@@ -1,0 +1,50 @@
+#!/bin/sh
+# Copie para .githooks/config.sh. Configure os valores abaixo uma única vez.
+# PREFIXO deve conter somente letras maiúsculas, números e underscore, iniciando por letra.
+ISSUE_PREFIX=${JIRA_PROJECT_KEY:-'{{PREFIXO_ISSUE_MAIUSCULO}}'}
+PROTECTED_BRANCHES='{{BRANCH_PRODUCAO}} {{BRANCH_DESENVOLVIMENTO}}'
+PACKAGE_MANAGER=${HOOK_PACKAGE_MANAGER:-npm}
+# A instalação automática usa lockfile congelado e não roda scripts de terceiros.
+AUTO_INSTALL_AFTER_MERGE=${AUTO_INSTALL_AFTER_MERGE:-1}
+HOOK_INSTALL_SCRIPTS=${HOOK_INSTALL_SCRIPTS:-0}
+
+hook_error() {
+  printf '\nHook: %s\n\n' "$1" >&2
+  exit 1
+}
+
+hook_check_prefix() {
+  case "$ISSUE_PREFIX" in
+    ''|[!A-Z]*|*[!A-Z0-9_]*) hook_error 'configure ISSUE_PREFIX em .githooks/config.sh.' ;;
+  esac
+}
+
+hook_has_key() {
+  printf '%s\n' "$1" | grep -qiE "(^|[^[:alnum:]_])${ISSUE_PREFIX}-[1-9][0-9]*([^[:alnum:]_]|$)"
+}
+
+hook_run_script() {
+  case "$PACKAGE_MANAGER" in
+    npm|pnpm|yarn|bun) "$PACKAGE_MANAGER" run "$1" ;;
+    *) hook_error 'PACKAGE_MANAGER deve ser npm, pnpm, yarn ou bun.' ;;
+  esac
+}
+
+# Pathspecs do Git: também alcançam manifests de workspaces, sem partir nomes.
+hook_dependency_diff() {
+  git diff "$@" -- package.json package-lock.json npm-shrinkwrap.json \
+    pnpm-lock.yaml yarn.lock bun.lock bun.lockb pnpm-workspace.yaml .npmrc \
+    .yarnrc.yml .pnpmfile.cjs ':(glob)**/package.json' \
+    ':(glob)**/package-lock.json' ':(glob)**/npm-shrinkwrap.json' \
+    ':(glob)**/pnpm-lock.yaml' ':(glob)**/yarn.lock' \
+    ':(glob)**/bun.lock' ':(glob)**/bun.lockb'
+}
+
+hook_untracked_dependencies() {
+  git ls-files --others --exclude-standard -- package.json package-lock.json \
+    npm-shrinkwrap.json pnpm-lock.yaml yarn.lock bun.lock bun.lockb \
+    pnpm-workspace.yaml .npmrc .yarnrc.yml .pnpmfile.cjs \
+    ':(glob)**/package.json' ':(glob)**/package-lock.json' \
+    ':(glob)**/npm-shrinkwrap.json' ':(glob)**/pnpm-lock.yaml' \
+    ':(glob)**/yarn.lock' ':(glob)**/bun.lock' ':(glob)**/bun.lockb'
+}

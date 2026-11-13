@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Fontes de hooks POSIX devem manter LF mesmo em checkouts Windows.
+Templates/frontend/templates/githooks/*.txt text eol=lf

@@ -1,0 +1,36 @@
+// Copie para .githooks/install.mjs. Execute no prepare do pacote raiz.
+import { existsSync, chmodSync, realpathSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
+import { execFileSync } from 'node:child_process';
+
+const enabled = value => ['1', 'true'].includes(String(value).toLowerCase());
+if (!enabled(process.env.CI) && !enabled(process.env.SKIP_GIT_HOOKS)) {
+  const root = fileURLToPath(new URL('../', import.meta.url));
+  // Archives e imagens de build sem .git não precisam instalar hooks.
+  if (existsSync(resolve(root, '.git'))) {
+    const git = args => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
+    const canonical = path => {
+      const value = realpathSync(path);
+      return process.platform === 'win32' ? value.toLowerCase() : value;
+    };
+    if (canonical(git(['rev-parse', '--show-toplevel'])) !== canonical(root)) {
+      throw new Error('Instale os hooks no pacote raiz do repositório.');
+    }
+    let current = '';
+    try {
+      current = git(['config', '--get', 'core.hooksPath']);
+    } catch (error) {
+      if (error.status !== 1) throw error;
+    }
+    if (current && current !== '.githooks') {
+      throw new Error(`core.hooksPath já usa ${current}; revise antes de substituir.`);
+    }
+    for (const name of ['config.sh', 'pre-commit', 'prepare-commit-msg', 'commit-msg', 'pre-push', 'post-merge']) {
+      const path = resolve(root, '.githooks', name);
+      if (!existsSync(path)) throw new Error(`Hook ausente: ${name}`);
+      if (name !== 'config.sh') chmodSync(path, 0o755);
+    }
+    git(['config', '--local', 'core.hooksPath', '.githooks']);
+  }
+}

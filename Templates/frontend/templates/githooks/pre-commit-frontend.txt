@@ -1,0 +1,29 @@
+#!/bin/sh
+# Copie para .githooks/pre-commit, junto de config.sh.
+[ "${SKIP_GIT_HOOKS:-0}" = 1 ] && exit 0
+. "$(dirname "$0")/config.sh" || exit 1
+# lint-staged seleciona os arquivos e preserva mudanças não adicionadas ao stage.
+# Não interprete nomes por linhas: espaços, renames e stage parcial são do lint-staged.
+git diff --cached --quiet --diff-filter=ACMR
+STATUS=$?
+case "$STATUS" in 0) exit 0 ;; 1) ;; *) exit "$STATUS" ;; esac
+hook_run_script hooks:pre-commit < /dev/null || exit $?
+
+# Audita somente quando um lockfile foi incluído/alterado no stage.
+git diff --cached --quiet --diff-filter=ACMR -- \
+  package-lock.json npm-shrinkwrap.json pnpm-lock.yaml yarn.lock bun.lock bun.lockb \
+  ':(glob)**/package-lock.json' ':(glob)**/npm-shrinkwrap.json' \
+  ':(glob)**/pnpm-lock.yaml' ':(glob)**/yarn.lock' \
+  ':(glob)**/bun.lock' ':(glob)**/bun.lockb'
+STATUS=$?
+case "$STATUS" in 0) exit 0 ;; 1) ;; *) exit "$STATUS" ;; esac
+if [ "${SKIP_DEPENDENCY_AUDIT:-0}" = 1 ]; then
+  printf 'Hook: auditoria local ignorada explicitamente; o CI continua obrigatório.\n' >&2
+  exit 0
+fi
+
+# O audit lê o disco. Não deixe auditar conteúdo diferente do stage.
+hook_dependency_diff --quiet || hook_error 'adicione ou guarde as mudanças locais de dependências antes da auditoria.'
+UNTRACKED=$(hook_untracked_dependencies) || exit 1
+[ -z "$UNTRACKED" ] || hook_error 'há arquivos de dependências não rastreados; adicione-os ou guarde-os antes da auditoria.'
+hook_run_script hooks:audit < /dev/null

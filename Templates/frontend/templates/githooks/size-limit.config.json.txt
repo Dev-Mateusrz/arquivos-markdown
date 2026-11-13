@@ -1,0 +1,14 @@
+[
+  {
+    "name": "JavaScript de produção (todos os chunks)",
+    "path": "dist/assets/*.js",
+    "limit": "{{LIMITE_TOTAL_JS_GZIP}}",
+    "gzip": true
+  },
+  {
+    "name": "CSS de produção",
+    "path": "dist/assets/*.css",
+    "limit": "{{LIMITE_TOTAL_CSS_GZIP}}",
+    "gzip": true
+  }
+]

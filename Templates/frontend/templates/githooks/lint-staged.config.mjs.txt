@@ -1,0 +1,6 @@
+// Copie para lint-staged.config.mjs na raiz do projeto.
+// Instale versões compatíveis de lint-staged, ESLint e Prettier nas devDependencies.
+export default {
+  '*.{js,jsx,ts,tsx}': ['eslint --fix', 'prettier --write'],
+  '*.{json,css,scss,md,mdx,yml,yaml}': ['prettier --write'],
+};

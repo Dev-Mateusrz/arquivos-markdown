@@ -1,0 +1,64 @@
+#!/bin/sh
+# Copie para .githooks/post-merge. O merge já terminou: uma falha não o desfaz.
+[ "${SKIP_GIT_HOOKS:-0}" = 1 ] && exit 0
+. "$(dirname "$0")/config.sh" || exit 0
+case "${CI:-}" in 1|true) exit 0 ;; esac
+
+notice() { printf '\nHook pós-merge: %s\n\n' "$1" >&2; }
+if [ "${1:-0}" = 1 ]; then
+  notice 'merge squash: sincronize dependências manualmente após revisar e concluir o commit.'
+  exit 0
+fi
+git rev-parse --verify 'ORIG_HEAD^{commit}' > /dev/null 2>&1 || exit 0
+hook_dependency_diff --quiet ORIG_HEAD HEAD
+STATUS=$?
+case "$STATUS" in
+  0) exit 0 ;;
+  1) ;;
+  *) notice 'não foi possível comparar as dependências; confira o ambiente manualmente.'; exit 0 ;;
+esac
+if [ "$AUTO_INSTALL_AFTER_MERGE" != 1 ]; then
+  notice 'dependências mudaram; instalação automática desativada. Sincronize o ambiente.'
+  exit 0
+fi
+# Não instale uma árvore diferente da recebida pelo merge.
+if ! hook_dependency_diff --quiet || ! hook_dependency_diff --cached --quiet; then
+  notice 'dependências têm alterações locais; instalação adiada. Revise e sincronize manualmente.'
+  exit 0
+fi
+UNTRACKED=$(hook_untracked_dependencies) || exit 0
+if [ -n "$UNTRACKED" ]; then
+  notice 'há arquivos de dependências não rastreados; instalação adiada.'
+  exit 0
+fi
+
+case "$PACKAGE_MANAGER" in
+  npm)
+    if [ ! -f package-lock.json ] && [ ! -f npm-shrinkwrap.json ]; then
+      notice 'npm exige um lockfile existente; instale e versione-o manualmente.'; exit 0
+    fi
+    set -- npm ci ;;
+  pnpm)
+    if [ ! -f pnpm-lock.yaml ]; then
+      notice 'pnpm exige pnpm-lock.yaml; instale e versione-o manualmente.'; exit 0
+    fi
+    set -- pnpm install --frozen-lockfile ;;
+  *) notice 'instalação automática disponível para npm/pnpm; adapte à versão do seu gerenciador.'; exit 0 ;;
+esac
+[ "$HOOK_INSTALL_SCRIPTS" = 1 ] || set -- "$@" --ignore-scripts
+
+# Lock por worktree: impede dois hooks de instalar simultaneamente.
+LOCK=$(git rev-parse --git-path frontend-install.lock) || exit 0
+if ! mkdir "$LOCK" 2>/dev/null; then
+  notice 'outra instalação está em andamento (ou há lock residual); confira antes de repetir.'
+  exit 0
+fi
+trap 'rmdir "$LOCK" 2>/dev/null' 0
+trap 'exit 0' 1 2 3 15
+notice 'sincronizando dependências com lockfile congelado; acompanhe a saída.'
+if ! "$@" < /dev/null; then
+  notice 'instalação falhou; o merge permanece concluído. Corrija o ambiente e execute a instalação manualmente.'
+else
+  notice 'dependências sincronizadas. Confira scripts de instalação necessários ao projeto.'
+fi
+exit 0
