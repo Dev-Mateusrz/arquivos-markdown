@@ -386,6 +386,78 @@ class HooksTests(unittest.TestCase):
         result = self.run_command([SH, script.as_posix()], ok=False)
         self.assertNotEqual(result.returncode, 0)
 
+    def ci_step(self, name, *, commented=False):
+        workflow = (SOURCE.parent / "github/workflows/frontend-ci.yml").read_text(encoding="utf-8")
+        if commented:
+            workflow = "\n".join(line[:6] + line[8:] if line.startswith("      # ") else line
+                                 for line in workflow.splitlines()) + "\n"
+        section = workflow.split("- name: " + name, 1)[1]
+        block = re.search(r"run: \|\n((?:          .*\n)+)", section)
+        self.assertIsNotNone(block)
+        script = self.root / "ci-step.sh"
+        script.write_text("\n".join(line[10:] for line in block[1].splitlines()) + "\n",
+                          encoding="utf-8", newline="\n")
+        return script
+
+    def test_ci_so_pula_aplicacao_em_markdown_documental(self):
+        script = self.ci_step("Detectar alterações de aplicação")
+        output = self.root / "saída com espaços.txt"
+        self.env["GITHUB_OUTPUT"] = output.as_posix()
+        for filename, expected in (("README.md", "false"), ("docs/guia.md", "false"),
+                                   ("docs/tópico/com espaços.md", "false"),
+                                   ("src/aviso.md", "true"), ("docs/guia.mdx", "true"),
+                                   ("docs/check.sh", "true"), ("package.json", "true"),
+                                   (".github/workflows/ci.yml", "true")):
+            with self.subTest(filename=filename):
+                self.env["BASE_SHA"] = self.git("rev-parse", "HEAD").stdout.strip()
+                file = self.root / filename
+                file.parent.mkdir(parents=True, exist_ok=True)
+                file.write_text("conteúdo de teste\n", encoding="utf-8")
+                self.git("add", "--", filename)
+                self.git("commit", "-qm", "chore(SMS-42): altera arquivo")
+                self.env["HEAD_SHA"] = self.git("rev-parse", "HEAD").stdout.strip()
+                output.write_text("")
+                self.run_command([SH, script.as_posix()])
+                self.assertEqual(output.read_text().strip(), "aplicacao=" + expected)
+
+    def test_ci_renomear_documentacao_para_codigo_exige_validacao(self):
+        script = self.ci_step("Detectar alterações de aplicação")
+        (self.root / "docs").mkdir()
+        (self.root / "docs/guia.md").write_text("conteúdo\n")
+        self.git("add", "docs/guia.md")
+        self.git("commit", "-qm", "docs(SMS-42): cria guia")
+        self.env["BASE_SHA"] = self.git("rev-parse", "HEAD").stdout.strip()
+        (self.root / "src").mkdir()
+        self.git("mv", "docs/guia.md", "src/importado.md")
+        self.git("commit", "-qm", "refactor(SMS-42): move conteúdo")
+        self.env["HEAD_SHA"] = self.git("rev-parse", "HEAD").stdout.strip()
+        output = self.root / "output.txt"
+        self.env["GITHUB_OUTPUT"] = output.as_posix()
+        self.run_command([SH, script.as_posix()])
+        self.assertEqual(output.read_text().strip(), "aplicacao=true")
+
+    def test_ci_diff_invalido_falha_sem_pular_checks(self):
+        script = self.ci_step("Detectar alterações de aplicação")
+        output = self.root / "output.txt"
+        self.env.update(BASE_SHA="inexistente", HEAD_SHA="HEAD", GITHUB_OUTPUT=output.as_posix())
+        result = self.run_command([SH, script.as_posix()], ok=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(output.exists())
+
+    def test_ci_titulo_opcional_valida_chave_e_trata_texto_como_dado(self):
+        script = self.ci_step("Validar título do PR para squash", commented=True)
+        for title, valid in (("feat(SMS-42): cria cadastro", True),
+                             ('fix(ui)!: muda cadastro SMS-42', True),
+                             ('feat(SMS-42): valida $(touch INJECTED)', True),
+                             ("feat: cria cadastro", False),
+                             ("fixup! feat(SMS-42): cria cadastro", False),
+                             ("feat: cria cadastro\nRefs: SMS-42", False)):
+            with self.subTest(title=title):
+                self.env["PR_TITLE"] = title
+                result = self.run_command([SH, script.as_posix()], ok=False)
+                self.assertEqual(result.returncode == 0, valid, result.stderr)
+                self.assertFalse((self.root / "INJECTED").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

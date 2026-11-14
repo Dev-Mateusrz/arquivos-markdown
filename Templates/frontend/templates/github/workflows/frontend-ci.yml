@@ -4,17 +4,25 @@
 # Instalação, tipagem, lint, testes, documentação, auditoria e bundle usam os
 # comandos do projeto. O instalador de hooks ignora CI; não é necessário
 # desativar todos os scripts de dependências apenas para evitar instalar hooks.
+# Meça a duração no projeto consumidor: 5–10 minutos é uma meta, não uma garantia.
 name: Frontend — validação da entrega
 
 on:
   pull_request:
     branches: ['{{BRANCH_DESENVOLVIMENTO}}', '{{BRANCH_PRODUCAO}}']
+    # Se habilitar a validação de título para squash, descomente para revalidar edições:
+    # types: [opened, synchronize, reopened, edited, ready_for_review]
   push:
     branches: ['{{BRANCH_DESENVOLVIMENTO}}', '{{BRANCH_PRODUCAO}}']
   workflow_dispatch:
 
 permissions:
   contents: read
+
+# Cancela execuções antigas do mesmo PR/ref, sem afetar outros workflows/eventos.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validar:
@@ -25,11 +33,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          # Use strings: o número 0 seria falso na expressão &&/||.
+          fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
           persist-credentials: false
 
-      # Valida apenas os commits do intervalo do PR; merges são ignorados.
-      # Para squash por título de PR, acrescente também a validação desse título.
+      # Em PRs, busque todo o histórico para validar commits e comparar com o merge-base.
+      # Valida os commits do intervalo; merges são ignorados.
+      # Para squash por título, substitua este passo pelo opcional abaixo.
       - name: Validar mensagens de commits do PR
         if: github.event_name == 'pull_request'
         env:
@@ -48,6 +58,47 @@ jobs:
             sh .githooks/commit-msg "$message"
           done < "$list"
 
+      # Opcional: ative também os tipos de evento comentados no gatilho do PR.
+      # A chave do ticket deve estar no título; o corpo não será a mensagem final.
+      # O título entra via env para ser tratado como dado, não como código shell.
+      # - name: Validar título do PR para squash
+      #   if: github.event_name == 'pull_request'
+      #   env:
+      #     PR_TITLE: ${{ github.event.pull_request.title }}
+      #     SKIP_GIT_HOOKS: '0'
+      #   shell: sh
+      #   run: |
+      #     set -eu
+      #     message=$(mktemp)
+      #     trap 'rm -f "$message"' 0
+      #     printf '%s\n' "$PR_TITLE" > "$message"
+      #     [ "$(wc -l < "$message")" -eq 1 ]
+      #     # Exige formato convencional também para títulos de revert/autosquash.
+      #     grep -qE '^[a-z]+(\([^()]+\))?!?: ' "$message"
+      #     sh .githooks/commit-msg "$message"
+
+      # Não use paths-ignore no gatilho: um check obrigatório precisa concluir.
+      # Só PRs podem pular etapas. Push e execução manual sempre validam tudo.
+      - name: Detectar alterações de aplicação
+        id: alteracoes
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: sh
+        run: |
+          set -eu
+          # Lista conservadora: Markdown da raiz e de docs/. Outros caminhos rodam tudo.
+          # Remova exclusões se esses arquivos alimentarem o build da aplicação.
+          if git diff --quiet "$BASE_SHA...$HEAD_SHA" -- . \
+            ':(exclude,glob)*.md' ':(exclude,glob)docs/**/*.md'; then
+            printf 'aplicacao=false\n' >> "$GITHUB_OUTPUT"
+          else
+            status=$?
+            [ "$status" -eq 1 ] || exit "$status"
+            printf 'aplicacao=true\n' >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/setup-node@v4
         with:
           node-version: '{{VERSAO_NODE}}'
@@ -60,6 +111,7 @@ jobs:
           {{CMD_INSTALL_CI_FRONTEND}}
 
       - name: Checar tipos
+        if: steps.alteracoes.outputs.aplicacao != 'false'
         run: |
           {{CMD_TYPECHECK_FRONTEND}}
 
@@ -70,10 +122,13 @@ jobs:
           {{CMD_AUDIT_FRONTEND}}
 
       - name: Lint
+        if: steps.alteracoes.outputs.aplicacao != 'false'
         run: |
           {{CMD_LINT_FRONTEND}}
 
       - name: Testes
+        if: steps.alteracoes.outputs.aplicacao != 'false'
+        # Use modo CI sem watch; inclua testes unitários e de componentes aplicáveis.
         run: |
           {{CMD_TEST_FRONTEND}}
 
@@ -82,11 +137,13 @@ jobs:
           {{CMD_DOCS_CHECK_FRONTEND}}
 
       - name: Compilar
+        if: steps.alteracoes.outputs.aplicacao != 'false'
         run: |
           {{CMD_BUILD_FRONTEND}}
 
       # Use os artefatos recém-gerados acima; não compile uma segunda vez.
       - name: Validar orçamento de bundle
+        if: steps.alteracoes.outputs.aplicacao != 'false'
         run: |
           {{CMD_BUNDLE_CHECK_FRONTEND}}
 
@@ -95,3 +152,18 @@ jobs:
 # Remova etapas que não se aplicam de forma justificada (ex.: tipos sem TS).
 # Configure no servidor a proteção de branches e os checks obrigatórios.
 # Não restrinja este workflow apenas à produção: hooks locais são contornáveis.
+# Auditoria e docs continuam em PRs documentais; não condicione audit ao lockfile.
+# setup-node guarda o cache do gerenciador, não node_modules. Use instalação que
+# respeite o lockfile e ajuste cache-dependency-path para a raiz real em monorepos.
+#
+# Evolução por medição, se o job passar de 5 minutos:
+# - Separe qualidade estática (tipos/lint/docs/audit) de testes/build/bundle em jobs
+#   paralelos. Cada runner precisa de checkout e instalação; um job preparatório
+#   não compartilha seu filesystem. Reaproveite o cache de pacotes, não node_modules.
+# - Mantenha build e bundle no mesmo job. Se outro job consumir dist/ ou .next/,
+#   envie o artefato uma vez com upload-artifact e recupere-o com download-artifact;
+#   configure caminhos, retenção e ausência de arquivos como erro, sem recompilar.
+# - E2E é uma camada adicional: use sharding suportado pelo runner de testes ou
+#   critérios explícitos de criticidade, com fallback; não substitua testes unitários.
+# - Preserve um check final estável que falhe se qualquer job obrigatório falhar
+#   ou for cancelado, para manter as regras de proteção corretas após a divisão.
