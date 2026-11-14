@@ -3,6 +3,6 @@ Fazer:
 [] - Organizar e padronizar todos a pasta Agentes.
 
 Criar:
-[] - Pasta padronizada de SpecsDrivens.
-[] - Storybook de componentes UI.
+[] - Criar SpecDrivens (Feature-Spec, Spec-First, Spec-Anchored e Spec-as-Source)
+[] - Repositório Storybook de componentes UI.
 [] - Pasta padronizada de (Documentação, Arquitetura, Interface, Qualidade e Segurança).

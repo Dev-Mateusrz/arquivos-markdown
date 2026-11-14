@@ -1,8 +1,8 @@
-# Subagentes Codex
+# Subagentes do Codex
 
-Seleção de 35 subagentes do [VoltAgent/awesome-codex-subagents](https://github.com/VoltAgent/awesome-codex-subagents), agrupados conforme as pastas deste repositório.
+Esta coleção reúne **35 subagentes** selecionados do [VoltAgent/awesome-codex-subagents](https://github.com/VoltAgent/awesome-codex-subagents). A organização abaixo acompanha as pastas deste repositório; cada item leva ao arquivo `.toml` correspondente.
 
-## Codex-Base
+## Codex-Base (6)
 
 - [architect-reviewer](Codex-Base/architect-reviewer.toml) — Revisa arquitetura e dependências ao avaliar mudanças estruturais.
 - [code-mapper](Codex-Base/code-mapper.toml) — Localiza arquivos e fluxos de execução antes de alterar código desconhecido.
@@ -11,7 +11,7 @@ Seleção de 35 subagentes do [VoltAgent/awesome-codex-subagents](https://github
 - [reviewer](Codex-Base/reviewer.toml) — Revisa diffs e PRs para encontrar bugs, regressões e testes ausentes.
 - [security-auditor](Codex-Base/security-auditor.toml) — Audita segurança em autenticação, permissões, entradas e tratamento de segredos.
 
-## Codex-Backend
+## Codex-Backend (6)
 
 - [api-designer](Codex-Backend/api-designer.toml) — Define contratos, esquemas e erros antes de criar ou alterar APIs.
 - [backend-developer](Codex-Backend/backend-developer.toml) — Implementa funcionalidades e corrige falhas em serviços e APIs.
@@ -20,7 +20,7 @@ Seleção de 35 subagentes do [VoltAgent/awesome-codex-subagents](https://github
 - [qa-expert](Codex-Backend/qa-expert.toml) — Planeja cenários de teste e critérios de aceite para funcionalidades e releases.
 - [sql-pro](Codex-Backend/sql-pro.toml) — Cria e revisa consultas SQL, transações e migrações de banco.
 
-## Codex-Frontend
+## Codex-Frontend (8)
 
 - [accessibility-tester](Codex-Frontend/accessibility-tester.toml) — Verifica acessibilidade de componentes e fluxos, incluindo teclado, foco e semântica.
 - [anti-ui-slop-reviewer](Codex-Frontend/anti-ui-slop-reviewer.toml) — Revisa interfaces para identificar padrões genéricos e desvios do design system.
@@ -31,25 +31,25 @@ Seleção de 35 subagentes do [VoltAgent/awesome-codex-subagents](https://github
 - [mobile-developer](Codex-Frontend/mobile-developer.toml) — Implementa e depura aplicativos mobile, considerando navegação, permissões e conectividade.
 - [ui-ux-tester](Codex-Frontend/ui-ux-tester.toml) — Testa jornadas e interações da interface e registra defeitos reproduzíveis.
 
-## Codex-Refatoração
+## Codex-Refatoração (3)
 
 - [dependency-manager](Codex-Refatoração/dependency-manager.toml) — Revisa atualizações, compatibilidade, lockfiles e riscos de dependências.
 - [legacy-modernizer](Codex-Refatoração/legacy-modernizer.toml) — Planeja migrações graduais de código e tecnologias legadas.
 - [refactoring-specialist](Codex-Refatoração/refactoring-specialist.toml) — Reorganiza código para melhorar manutenção sem alterar seu comportamento.
 
-## Codex-Documentação
+## Codex-Documentação (3)
 
 - [api-documenter](Codex-Documentação/api-documenter.toml) — Documenta APIs para consumidores, com contratos, autenticação, erros e exemplos reais.
 - [documentation-engineer](Codex-Documentação/documentation-engineer.toml) — Cria e atualiza guias técnicos de instalação, desenvolvimento e operação.
 - [readme-generator](Codex-Documentação/readme-generator.toml) — Cria e organiza READMEs com informações verificadas no repositório.
 
-## Codex-DebugTests
+## Codex-DebugTests (3)
 
 - [debugger](Codex-DebugTests/debugger.toml) — Investiga a causa de bugs e valida correções em falhas complexas ou intermitentes.
 - [error-detective](Codex-DebugTests/error-detective.toml) — Analisa logs e exceções para identificar a origem provável de uma falha.
 - [test-automator](Codex-DebugTests/test-automator.toml) — Implementa testes automatizados e cobertura contra regressões.
 
-## Codex-Outros
+## Codex-Outros (6)
 
 - [context-manager](Codex-Outros/context-manager.toml) — Prepara contexto e restrições do projeto antes de delegar tarefas.
 - [devops-engineer](Codex-Outros/devops-engineer.toml) — Configura pipelines de CI/CD, ambientes e automações de entrega.
@@ -60,6 +60,6 @@ Seleção de 35 subagentes do [VoltAgent/awesome-codex-subagents](https://github
 
 ## Uso
 
-Conforme as [instruções do projeto de origem](https://github.com/VoltAgent/awesome-codex-subagents/blob/9abe3279a0aa4ee518381af800ca1062398f5433/README.md#installation), copie os `.toml` desejados para `.codex/agents/` no projeto ou `~/.codex/agents/` no perfil do usuário. Atualize a sessão do Codex e solicite explicitamente a delegação ao agente escolhido.
+Copie os arquivos `.toml` desejados para `.codex/agents/` no projeto ou `~/.codex/agents/` no perfil do usuário, conforme as [instruções de instalação do projeto de origem](https://github.com/VoltAgent/awesome-codex-subagents/blob/9abe3279a0aa4ee518381af800ca1062398f5433/README.md#installation). Depois, atualize a sessão do Codex e solicite explicitamente a delegação ao agente pelo nome.
 
-Coleta: 12/11/2026 · [Revisão de origem](https://github.com/VoltAgent/awesome-codex-subagents/commit/9abe3279a0aa4ee518381af800ca1062398f5433) · [Licença MIT](LICENSE).
+Coleta em 12/11/2026 · [Revisão de origem](https://github.com/VoltAgent/awesome-codex-subagents/commit/9abe3279a0aa4ee518381af800ca1062398f5433) · [Licença MIT](LICENSE).
