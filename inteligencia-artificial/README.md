@@ -5,7 +5,7 @@ Agentes especializados, subagentes e regras compartilhadas para apoiar o trabalh
 ## Índice
 
 - [agentes-especializados](agentes-especializados/README.md) — Instruções de agentes voltados a demandas e áreas de conhecimento específicas.
-- [regras-modulares-agents](regras-modulares-agents/README.md) — Regras reutilizáveis para orientar commits, branches e pull requests.
+- [regras-modulares-agents](regras-modulares-agents/README.md) — Regras curtas por assunto, referenciadas pelo AGENTS.md como guia de leitura e aplicação pela IA.
 - [subagentes](subagentes/README.md) — Catálogo de subagentes do Codex organizado por área de atuação.
 
 ## Navegação
