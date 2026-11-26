@@ -1,8 +1,0 @@
-Fazer:
-[] - Organizar e padronizar todos os arquivos da pasta Templates.
-[] - Organizar e padronizar todos a pasta Agentes.
-
-Criar:
-[] - Criar SpecDrivens (Feature-Spec, Spec-First, Spec-Anchored e Spec-as-Source)
-[] - Repositório Storybook de componentes UI.
-[] - Pasta padronizada de (Documentação, Arquitetura, Interface, Qualidade e Segurança).
