@@ -4,6 +4,7 @@ Exemplos de desenvolvimento orientado por especificações. Comece pelo conjunto
 
 ## Índice
 
+- [Guia de desenvolvimento orientado por especificações](docs/spec-driven-development.md) — Material de referência do método.
 - [spec-kaizen](spec-kaizen/README.md) — Exemplo de especificações do Kaizen, com contexto, modelo de feature e funcionalidades.
 
 ## Navegação

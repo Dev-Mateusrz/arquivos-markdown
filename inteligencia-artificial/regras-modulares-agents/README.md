@@ -15,7 +15,6 @@ Por exemplo, o AGENTS.md pode orientar a leitura das regras de commits e branche
 
 - [padrao-commit-branch.md](padrao-commit-branch.md) — Regras para branches, preparação de alterações e mensagens de commit.
 - [padrao-pullrequest.md](padrao-pullrequest.md) — Regras para preparar e revisar pull requests.
-
 - [padrao-agents.md](padrao-agents.md) — Regras para estruturar AGENTS.md e conduzir delegação.
 - [padrao-issue-jira.md](padrao-issue-jira.md) — Regras para redigir e atualizar issues no Jira.
 

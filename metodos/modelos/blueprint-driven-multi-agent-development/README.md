@@ -4,8 +4,8 @@ Material sobre desenvolvimento com múltiplos agentes orientado por blueprint, a
 
 ## Índice
 
-- [Blueprint-Driven-Multi-Agent-Development.md](Blueprint-Driven-Multi-Agent-Development.md)
-- [image.png](image.png)
+- [Blueprint-Driven-Multi-Agent-Development.md](docs/Blueprint-Driven-Multi-Agent-Development.md)
+- [Imagem de referência](docs/referencias/image.png)
 
 ## Navegação
 

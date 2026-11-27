@@ -4,6 +4,7 @@ Modelos e abordagens para organizar o desenvolvimento de software e a colaboraç
 
 ## Índice
 
+- [boas-praticas](boas-praticas/README.md) — Convenções de organização, commits, issues e pull requests.
 - [modelos](modelos/README.md) — Exemplos de organização do trabalho orientado por blueprints e especificações.
 
 ## Navegação
