@@ -127,7 +127,7 @@ Gitleaks é uma proteção adicional de segredos, independente da auditoria de p
 
 ## Verificação deste conjunto
 
-Execute `python -B -m unittest discover -s Templates/frontend/templates/githooks -p test_githooks.py -v` na raiz desta biblioteca. Os testes usam Git, Node e um shell POSIX em repositórios temporários. As chamadas ao gerenciador são simuladas; ESLint, Prettier e lint-staged precisam ser validados com as dependências do projeto consumidor.
+Execute `python -B -m unittest discover -s sistemas/templates/frontend-gits/githooks -p test_githooks.py -v` na raiz desta biblioteca. Os testes usam Git, Node e um shell POSIX em repositórios temporários. As chamadas ao gerenciador são simuladas; ESLint, Prettier e lint-staged precisam ser validados com as dependências do projeto consumidor.
 
 Fontes: [Git — contratos dos hooks](https://git-scm.com/docs/githooks), [lint-staged — stage parcial e tarefas](https://github.com/lint-staged/lint-staged), [npm — ciclo de vida dos scripts](https://docs.npmjs.com/cli/v11/using-npm/scripts/), [npm audit](https://docs.npmjs.com/cli/v11/commands/npm-audit/), [pnpm audit](https://pnpm.io/cli/audit), [npm ci](https://docs.npmjs.com/cli/v11/commands/npm-ci/), [pnpm install](https://pnpm.io/cli/install), [TypeScript — noEmit](https://www.typescriptlang.org/tsconfig/noEmit.html) e [Size Limit](https://github.com/ai/size-limit).
 
