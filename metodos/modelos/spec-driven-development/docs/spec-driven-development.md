@@ -1,3 +1,16 @@
+> **Instrução para a IA (Meta-Prompt):** Este documento é um **guia de referência metodológica** sobre *Spec-Driven Development* (SDD) e arquitetura centrada em contratos. Ao utilizá-lo para estruturar especificações, contratos, regras de IA (`AGENTS.md`, `CLAUDE.md`, `.cursorrules`) ou pipelines de validação em um projeto, **não copie cegamente nomes de pastas, ferramentas ou exemplos ilustrativos** (`meu-projeto/`, `001-checkout/`, `Orval`, `Spectral`, `openapi.yaml`). Inspecione primeiro a estrutura real do repositório atual para identificar:
+> 1. **Natureza e Topologia do Projeto:** Se é **Greenfield** (novo) ou **Brownfield** (legado/existente), se opera como monorepo ou repositórios separados (frontend/backend/serviços) e qual é o nível de rigor adequado ao escopo (`Spec-First`, `Spec-Anchored` ou `Spec-as-Source`).
+> 2. **Artefatos e Ferramentas Reais:** Qual é a stack efetiva do projeto, quais ferramentas de contrato/schema já existem (ex.: REST/OpenAPI, GraphQL, gRPC/Protobuf, AsyncAPI, Zod/JSON Schema), quais frameworks de teste são usados e se já há estrutura de specs (`.specs/`, `.specify/`, `docs/`, ADRs) ou instruções de agentes configuradas.
+> 3. **Fronteiras de Isolamento:** Como os contratos devem ser posicionados e validados no CI/CD para servir como interface determinística entre equipes ou agentes paralelos sem vazamento de contexto de implementação.
+>
+> A partir dessa análise, gere ou adapte a estrutura de especificações, contratos e diretrizes de agentes de forma determinística e aderente à realidade deste repositório, garantindo estritamente:
+> - A separação entre **Intenção de Negócio** (`spec.md` com critérios *Given/When/Then* agnósticos de tecnologia) e **Plano Técnico** (`plan.md` e `tasks.md` atômicos).
+> - O carregamento sob demanda (**Progressive Disclosure**) nos arquivos guias de IA, evitando sobrecarga de contexto.
+> - A proteção contra *over-engineering* em casos de exceção (exploração visual experimental ou *hotfixes* triviais).
+
+
+Atualizado: 27/11/2026
+
 Metodologia de engenharia de software que usam especificações estruturadas como única fonte da verdade e que guiam todo o ciclo de vida do sistema - desde o planejamento até a geração e validação do código.
 
 `Spec-First` É criada antes do código para guiar a implementação inicial, mas depois o código passa a ser a referência principal. É usada em protótipos avançados, MVPs rápidos ou features isoladas.
