@@ -4,8 +4,8 @@ Exemplos de organização do trabalho orientado por blueprints e especificaçõe
 
 ## Índice
 
-- [blueprint-driven-multi-agent-development](blueprint-driven-multi-agent-development/README.md) — Material sobre desenvolvimento com múltiplos agentes orientado por blueprint, acompanhado de uma imagem de referência.
-- [spec-driven-development](spec-driven-development/README.md) — Exemplos de desenvolvimento orientado por especificações. Comece pelo conjunto de especificações do Kaizen.
+- [blueprint-driven-multi-agent-development](blueprint-driven-multi-agent-development/README.md) — Guias de desenvolvimento orientado por blueprint, configuração com Spec-Driven Development e imagem do fluxo BMAD.
+- [spec-driven-development](spec-driven-development/README.md) — Guia do método e exemplo de especificações do Kaizen.
 
 ## Navegação
 

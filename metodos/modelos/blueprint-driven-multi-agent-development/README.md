@@ -1,11 +1,12 @@
 # blueprint-driven-multi-agent-development
 
-Material sobre desenvolvimento com múltiplos agentes orientado por blueprint, acompanhado de uma imagem de referência.
+Guias de desenvolvimento com múltiplos agentes orientado por blueprint e de configuração com Spec-Driven Development e GitHub Spec Kit.
 
 ## Índice
 
-- [Blueprint-Driven-Multi-Agent-Development.md](Blueprint-Driven-Multi-Agent-Development.md)
-- [image.png](image.png)
+- [Blueprint-Driven-Multi-Agent-Development.md](docs/Blueprint-Driven-Multi-Agent-Development.md)
+- [Config-Blueprint-Spec.md](docs/Config-Blueprint-Spec.md) — Guia de instalação, configuração e uso integrado de BMAD, Spec-Driven Development e GitHub Spec Kit.
+- [Fluxo BMAD](docs/referencias/fluxo-bmad.png) — Imagem de referência do fluxo de trabalho.
 
 ## Navegação
 
