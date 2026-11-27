@@ -4,6 +4,8 @@ Modelos e abordagens para organizar o desenvolvimento de software e a colaboraç
 
 ## Índice
 
+- [boas-praticas](boas-praticas/README.md) — Integração de Spec-Driven Development, Blueprint e GitHub Spec Kit.
+
 - [modelos](modelos/README.md) — Exemplos de organização do trabalho orientado por blueprints e especificações.
 
 ## Navegação
