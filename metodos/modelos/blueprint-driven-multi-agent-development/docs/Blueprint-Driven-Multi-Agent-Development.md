@@ -1,3 +1,12 @@
+> **Instrução para a IA (Meta-Prompt):** Este documento é um **guia de referência arquitetural** sobre a metodologia *Blueprint-Driven Multi-Agent Development* (BMAD) e o fluxo *Spec-Driven Development*. Ao utilizá-lo para configurar um projeto ou estruturar arquivos de agentes, workflows e regras (como `project-context.md`, `.bmad-core/` ou `.agents/`), **não copie nomes de pastas ou exemplos ilustrativos** (`meu-projeto/`, `backend/`, `frontend/`). Inspecione primeiro a estrutura real do repositório atual para identificar:
+> 1. Se o projeto é **Greenfield** (novo) ou **Brownfield** (código existente) e qual é a organização real de pastas (monorepo, repositórios separados, stacks utilizadas).
+> 2. Se já existem arquivos de contexto, regras de IA (`.cursorrules`, `CLAUDE.md`, `.agents/`) ou documentação prévia (`docs/`, ADRs, schemas de API).
+> 3. Qual nível de escala (*Full Method* vs. *Quick Flow*) se aplica ao escopo solicitado pelo usuário.
+>
+> A partir dessa análise, gere ou adapte os artefatos, personas e restrições negativas de forma determinística e aderente à realidade técnica deste repositório, respeitando estritamente a separação entre **Planejamento Agêntico** (descoberta, PRD, arquitetura, fatiamento de stories) e **Execução Orientada a Contexto** (implementação isolada por story e revisão de QA).
+
+Atualizado 27/11/2026
+
 Blueprint-Driven Multi-Agent Development é um framework open-source de desenvolvimento orientado a especificações (Spec-Driven-Development) feito por uma linha de montagem estruturada de subagentes de IA especializados.
 
 Funciona como uma camada de processo e engenharia de contexto, organizando o ciclo de vida do software em blueprints (Documentos Persistentes) que passam de um subagente para outro.
@@ -7,16 +16,6 @@ Ao invés de pedir para uma única IA fazer tudo em um chat longo (onde o contex
 - Fonte única da verdade: Nenhuma decisão fica apenas no histórico efêmero do chat. Tudo é gravado em arquivos Markdown e YAML versionados no repositório Git (PRDs, diagramas de arquitetura, histórias de usuário).
 - Separação rígida: O planejamento e a arquitetura são concluídos e validados por humanos antes que uma única linha de código seja escrita.
 
-## Como Funciona?
-Substitui conversas longas por um fluxo de montagem documentada: Docs-as-Code.
-
-- `Analyst & PM` é a parte de Descoberta e Requisitos onde se discute as ideias com o agente de produto e ele transforma o brainstorming em um PRD (Documento de Requisitos do Produto) detalhado com regra de negocio e escopo.
-
-- `Architect` é onde o agente lê o PRD e escolhe as stack do projeto, modelos de dados, contratos de API e gera os ADR (Registros de Decisões de Arquitetura).
-
-- `Scrum Master & PO` é onde o agente quebra o plano macro em Épicos e User Stories independentes, carregando o contexto arquitetural necessário para ser executado.
-
-- `Dev & QA` é quando o agente desenvolvedor implementa uma história por vez seguindo o blueprint. Enquanto o QA revisa e valida a segurança, padrões de código e testes automatizados.
 
 ## Como Usar?
 A instalação padrão é feita via CLI (npx bmad-method install) diretamente na raiz do projeto, criando pastas de configuração (.bmad-core ou _bmad-output) com prompts, templates e workflows. Para extrair o máximo de eficiência com as ferramentas atuais:
@@ -31,7 +30,7 @@ A instalação padrão é feita via CLI (npx bmad-method install) diretamente na
 
 ## Estrutura e Organização Frontend e Backend
 
-```
+```text
 
 meu-projeto/
 ├── .bmad-core/                  # Personas, templates e workflows do BMAD
@@ -53,28 +52,49 @@ meu-projeto/
 
 ## Fluxo de Camadas e Trabalho
 
-![alt text](./referencias/image.png)
+```mermaid
+flowchart TD
+    subgraph Fase1 [Fase 1: Planejamento Agêntico]
+        A[Analyst: Project Brief] --> B[PM: PRD]
+        B --> C[Architect: Arquitetura & ADRs]
+        C --> D[SM / PO: Épicos & Stories]
+    end
+    subgraph Fase2 [Fase 2: Execução Orientada a Contexto]
+        D --> E[Dev: Implementação Isolada por Story]
+        E --> F[QA: Testes & Revisão contra Blueprint]
+    end
+```
 
-Conforme ilustrado no diagrama que você compartilhou, o método opera em duas grandes fases divididas em camadas sequenciais com Quality Gates (validação humana entre etapas):  
+
+
+Conforme ilustrado no diagrama, o método opera em duas grandes fases divididas em camadas sequenciais com Quality Gates (validação humana entre etapas):  
 
 Fase 1: Planejamento Agêntico (Agentic Planning - Linha Superior)
-•   Analyst: Faz brainstorming, pesquisa de mercado e transforma uma ideia vaga em um Project Brief.
-•   Product Manager (PM): Converte o brief em um PRD completo com requisitos, métricas e regras de negócio.
-•   Architect: Lê o PRD e projeta a topologia do sistema, escolha de stack, modelagem de dados e segurança (architecture.md).
-•   Scrum Master (SM) & Product Owner (PO): Validam a consistência entre negócio e arquitetura, fatiando o plano em Épicos e Stories detalhadas com critérios de aceite claros.
+- Analyst: Faz brainstorming, pesquisa de mercado e transforma uma ideia vaga em um Project Brief.
+- Product Manager (PM): Converte o brief em um PRD completo com requisitos, métricas e regras de negócio.
+- Architect: Lê o PRD e projeta a topologia do sistema, escolha de stack, modelagem de dados e segurança (architecture.md).
+- Scrum Master (SM) & Product Owner (PO): Validam a consistência entre negócio e arquitetura, fatiando o plano em Épicos e Stories detalhadas com critérios de aceite claros.
 
 Fase 2: Desenvolvimento Orientado a Contexto (Linha Inferior)
-• QA Engineer: Atua criando planos de teste, cenários de borda e revisando a testabilidade antes ou logo após o código.
-• Developer (Dev): Abre uma nova sessão de chat limpa para cada Story, carrega apenas o arquivo daquela história e a arquitetura relevante, escreve o código e roda os testes unitários.
-• Ciclo de Revisão: O QA/Reviewer audita o código gerado contra os critérios de aceite da Story e do architecture.md antes de aprovar o Pull Reques
+- QA Engineer: Atua criando planos de teste, cenários de borda e revisando a testabilidade antes ou logo após o código.
+- Developer (Dev): Abre uma nova sessão de chat limpa para cada Story, carrega apenas o arquivo daquela história e a arquitetura relevante, escreve o código e roda os testes unitários.
+- Ciclo de Revisão: O QA/Reviewer audita o código gerado contra os critérios de aceite da Story e do architecture.md antes de aprovar o Pull Reques
 
 ### Função do Orquestrador e dos Subagentes
 
 O Orquestrador (bmad-orchestrator / bmad-master):
-• Atua como o roteador central e gerente de estado do projeto.
-• Ele identifica em qual estágio o projeto está, recomenda qual persona deve ser ativada a seguir, gerencia os handoffs (passagem de bastão entre documentos) e garante que nenhuma etapa crítica seja pulada.
-• Em IDEs modernas (como Claude Code ou Cursor), ele invoca comandos/skills específicos para carregar o contexto exato daquela fase.
+- Atua como o roteador central e gerente de estado do projeto.
+- Ele identifica em qual estágio o projeto está, recomenda qual persona deve ser ativada a seguir, gerencia os handoffs (passagem de bastão entre documentos) e garante que nenhuma etapa crítica seja pulada.
+- Em IDEs modernas (como Claude Code ou Cursor), ele invoca comandos/skills específicos para carregar o contexto exato daquela fase.
 
 Os Subagentes (Personas Especializadas):
-• Cada subagente é um arquivo de configuração (Markdown + YAML) com restrições negativas estritas (ex: o PM é proibido de escrever código; o Dev é proibido de alterar a arquitetura por conta própria).
-• Por que funcionam tão bem? Ao limpar a janela de contexto a cada troca de subagente e alimentar o modelo apenas com o artefato gerado pelo agente anterior, elimina-se a "poluição de contexto", mantendo a atenção do LLM focada 100% na tarefa atual (seja modelar um banco SQL ou estilizar um componente React).
+- Cada subagente é um arquivo de configuração (Markdown + YAML) com restrições negativas estritas (ex: o PM é proibido de escrever código; o Dev é proibido de alterar a arquitetura por conta própria).
+- Por que funcionam tão bem? Ao limpar a janela de contexto a cada troca de subagente e alimentar o modelo apenas com o artefato gerado pelo agente anterior, elimina-se a "poluição de contexto", mantendo a atenção do LLM focada 100% na tarefa atual (seja modelar um banco SQL ou estilizar um componente React).
+
+- `Analyst & PM` é a parte de Descoberta e Requisitos onde se discute as ideias com o agente de produto e ele transforma o brainstorming em um PRD (Documento de Requisitos do Produto) detalhado com regra de negocio e escopo.
+
+- `Architect` é onde o agente lê o PRD e escolhe as stack do projeto, modelos de dados, contratos de API e gera os ADR (Registros de Decisões de Arquitetura).
+
+- `Scrum Master & PO` é onde o agente quebra o plano macro em Épicos e User Stories independentes, carregando o contexto arquitetural necessário para ser executado.
+
+- `Dev & QA` é quando o agente desenvolvedor implementa uma história por vez seguindo o blueprint. Enquanto o QA revisa e valida a segurança, padrões de código e testes automatizados.
