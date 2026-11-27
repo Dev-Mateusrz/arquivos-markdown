@@ -1,4 +1,4 @@
-EBMAD-METHOD - framework open-source para organizar o ciclo de vida de desenvolvimento de software usando agentes de IA especializados, dividindo o trabalho em etapas ágeis diretamente dentro da IDE.
+BDMAD-METHOD - framework open-source para organizar o ciclo de vida de desenvolvimento de software usando agentes de IA especializados, dividindo o trabalho em etapas ágeis diretamente dentro da IDE.
 
 Blueprint-Driven Multi-Agent Development - arquitetura e guia de especificações técnicas usadas pelos Multiplos Agentes com suas respectivas responsabilidades, usando como fonte da verdade.
 
@@ -13,7 +13,6 @@ Substitui conversas longas por um fluxo de montagem documentada: Docs-as-Code.
 
 - `Dev & QA` é quando o agente desenvolvedor implementa uma história por vez seguindo o blueprint. Enquanto o QA revisa e valida a segurança, padrões de código e testes automatizados.
 
-![alt text](image.png)
 
 ### Estrutura e Organização
 
